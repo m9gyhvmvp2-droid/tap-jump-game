@@ -1,403 +1,51 @@
-<!DOCTYPE html>
-<html lang="ja">
+<!doctype html>
+<html lang='ja'>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Tap Jump Game</title>
-  <style>
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #dff4ff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    body {
-      display: grid;
-      place-items: center;
-    }
-    #gameWrap {
-      position: relative;
-      width: min(100vw, 720px);
-      height: min(100vh, 900px);
-      background: linear-gradient(#9edcff 0%, #eaf8ff 68%, #d7efbe 68%, #bfe39d 100%);
-      overflow: hidden;
-      border-radius: 22px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.14);
-    }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    #hud {
-      position: absolute;
-      inset: 18px 18px auto 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      pointer-events: none;
-      font-weight: 800;
-      color: #16324a;
-      text-shadow: 0 2px 0 rgba(255,255,255,.8);
-    }
-    #score { font-size: 28px; }
-    #best { font-size: 16px; opacity: .8; }
-    #overlay {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgba(255,255,255,.18);
-      backdrop-filter: blur(2px);
-      text-align: center;
-      padding: 24px;
-    }
-    #card {
-      width: min(90%, 360px);
-      background: rgba(255,255,255,.88);
-      border: 1px solid rgba(255,255,255,.9);
-      border-radius: 28px;
-      padding: 28px 24px;
-      box-shadow: 0 18px 50px rgba(28,69,93,.18);
-    }
-    h1 { margin: 0 0 12px; color: #16324a; font-size: 34px; }
-    p { margin: 0 0 20px; color: #46667c; line-height: 1.7; }
-    button {
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 14px 24px;
-      width: 100%;
-      font-size: 18px;
-      font-weight: 800;
-      color: white;
-      background: #1677ff;
-      box-shadow: 0 8px 20px rgba(22,119,255,.25);
-    }
-    button:active { transform: scale(.98); }
-    .hidden { display: none !important; }
-    #tip {
-      position: absolute;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,.82);
-      color: #27465c;
-      padding: 9px 14px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 14px;
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    @media (max-width: 720px) {
-      #gameWrap { width: 100vw; height: 100vh; border-radius: 0; }
-    }
-  </style>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1,viewport-fit=cover'>
+<title>Tap Jump Desert</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5dfba;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;touch-action:manipulation;-webkit-user-select:none;user-select:none}body{display:grid;place-items:center}#wrap{position:relative;width:min(100vw,720px);height:min(100vh,900px);overflow:hidden;border-radius:22px;box-shadow:0 24px 60px rgba(61,33,9,.18);background:linear-gradient(180deg,#8ec8f0 0%,#f6dba1 70%,#e9c17c 100%)}canvas{width:100%;height:100%;display:block}#hud{position:absolute;inset:16px 16px auto 16px;display:flex;justify-content:space-between;gap:12px;pointer-events:none;z-index:2}.group{display:flex;gap:10px;flex-wrap:wrap}.pill{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.7);border-radius:999px;padding:10px 14px;min-width:82px;box-shadow:0 8px 20px rgba(62,41,14,.08);backdrop-filter:blur(6px)}.lab{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:#8d6b39;margin-bottom:2px}.val{display:block;font-size:24px;font-weight:900;color:#38240f;line-height:1}#overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,251,245,.22);backdrop-filter:blur(3px);z-index:3;text-align:center;padding:24px}#card{width:min(90%,380px);background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:28px 24px;box-shadow:0 18px 50px rgba(72,46,12,.16)}h1{margin:0 0 12px;color:#3e2810;font-size:34px}p{margin:0 0 20px;color:#6a5130;line-height:1.7}button{appearance:none;border:0;border-radius:999px;padding:14px 24px;width:100%;font-size:18px;font-weight:800;color:#fff;background:linear-gradient(180deg,#ff9446 0%,#f26a1c 100%);box-shadow:0 10px 24px rgba(242,106,28,.25)}button:active{transform:scale(.98)}.hidden{display:none!important}#tip{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(255,255,255,.84);color:#5c4220;padding:10px 14px;border-radius:999px;font-weight:800;font-size:14px;pointer-events:none;white-space:nowrap;z-index:2;box-shadow:0 10px 24px rgba(66,42,12,.1)}@media(max-width:720px){#wrap{width:100vw;height:100vh;border-radius:0}.val{font-size:22px}}
+</style>
 </head>
 <body>
-  <main id="gameWrap" aria-label="タップでジャンプして障害物を避けるゲーム">
-    <canvas id="game"></canvas>
-
-    <div id="hud">
-      <div id="score">0</div>
-      <div id="best">BEST 0</div>
-    </div>
-
-    <div id="overlay">
-      <div id="card">
-        <h1 id="title">Tap Jump</h1>
-        <p id="message">画面をタップするとジャンプ。<br>障害物を飛び越えよう！</p>
-        <button id="startBtn">スタート</button>
-      </div>
-    </div>
-
-    <div id="tip" class="hidden">画面タップでジャンプ</div>
-  </main>
-
-  <script>
-    const wrap = document.getElementById('gameWrap');
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const overlay = document.getElementById('overlay');
-    const titleEl = document.getElementById('title');
-    const messageEl = document.getElementById('message');
-    const startBtn = document.getElementById('startBtn');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const tipEl = document.getElementById('tip');
-
-    let W = 0, H = 0, dpr = 1;
-    let groundY = 0;
-    let running = false;
-    let gameOver = false;
-    let last = 0;
-    let spawnTimer = 0;
-    let score = 0;
-    let best = Number(localStorage.getItem('tapJumpBest') || 0);
-    let speed = 330;
-
-    const player = {
-      x: 0,
-      y: 0,
-      w: 42,
-      h: 42,
-      vy: 0,
-      gravity: 1800,
-      jumpPower: 690,
-      onGround: true
-    };
-
-    let obstacles = [];
-    let particles = [];
-
-    function resize() {
-      const r = wrap.getBoundingClientRect();
-      W = r.width;
-      H = r.height;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(W * dpr);
-      canvas.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      groundY = H * 0.78;
-      player.x = Math.max(42, W * 0.18);
-      if (!running) player.y = groundY - player.h;
-    }
-
-    function resetGame() {
-      obstacles = [];
-      particles = [];
-      score = 0;
-      speed = 330;
-      spawnTimer = 0;
-      player.y = groundY - player.h;
-      player.vy = 0;
-      player.onGround = true;
-      scoreEl.textContent = '0';
-      bestEl.textContent = `BEST ${best}`;
-      gameOver = false;
-    }
-
-    function startGame() {
-      resetGame();
-      running = true;
-      overlay.classList.add('hidden');
-      tipEl.classList.remove('hidden');
-      setTimeout(() => tipEl.classList.add('hidden'), 1800);
-      last = performance.now();
-      requestAnimationFrame(loop);
-    }
-
-    function jump() {
-      if (!running || gameOver) return;
-      if (player.onGround) {
-        player.vy = -player.jumpPower;
-        player.onGround = false;
-        for (let i = 0; i < 8; i++) {
-          particles.push({
-            x: player.x + player.w * 0.4,
-            y: groundY - 4,
-            vx: -40 - Math.random() * 110,
-            vy: -20 - Math.random() * 90,
-            life: .45 + Math.random() * .25,
-            size: 3 + Math.random() * 5
-          });
-        }
-      }
-    }
-
-    function spawnObstacle() {
-      const tall = Math.random() > .65;
-      const h = tall ? 78 : 52;
-      const w = tall ? 32 : 42;
-      obstacles.push({
-        x: W + 30,
-        y: groundY - h,
-        w,
-        h,
-        counted: false
-      });
-    }
-
-    function intersects(a, b) {
-      const pad = 5;
-      return (
-        a.x + pad < b.x + b.w - pad &&
-        a.x + a.w - pad > b.x + pad &&
-        a.y + pad < b.y + b.h - pad &&
-        a.y + a.h - pad > b.y + pad
-      );
-    }
-
-    function endGame() {
-      running = false;
-      gameOver = true;
-      best = Math.max(best, Math.floor(score));
-      localStorage.setItem('tapJumpBest', best);
-      bestEl.textContent = `BEST ${best}`;
-      titleEl.textContent = 'Game Over';
-      messageEl.innerHTML = `スコア <strong>${Math.floor(score)}</strong><br>もう一回挑戦しよう！`;
-      startBtn.textContent = 'もう一度';
-      overlay.classList.remove('hidden');
-    }
-
-    function update(dt) {
-      player.vy += player.gravity * dt;
-      player.y += player.vy * dt;
-
-      if (player.y + player.h >= groundY) {
-        player.y = groundY - player.h;
-        player.vy = 0;
-        player.onGround = true;
-      }
-
-      speed += dt * 7;
-      spawnTimer -= dt;
-      if (spawnTimer <= 0) {
-        spawnObstacle();
-        spawnTimer = Math.max(.8, 1.45 - score * .012) + Math.random() * .65;
-      }
-
-      for (const o of obstacles) {
-        o.x -= speed * dt;
-        if (!o.counted && o.x + o.w < player.x) {
-          o.counted = true;
-          score += 1;
-          scoreEl.textContent = Math.floor(score);
-        }
-        if (intersects(player, o)) {
-          endGame();
-          return;
-        }
-      }
-      obstacles = obstacles.filter(o => o.x + o.w > -20);
-
-      for (const p of particles) {
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 420 * dt;
-        p.life -= dt;
-      }
-      particles = particles.filter(p => p.life > 0);
-    }
-
-    function roundRect(x, y, w, h, r) {
-      ctx.beginPath();
-      ctx.roundRect(x, y, w, h, r);
-      ctx.fill();
-    }
-
-    function drawCloud(x, y, s) {
-      ctx.fillStyle = 'rgba(255,255,255,.72)';
-      ctx.beginPath();
-      ctx.arc(x, y, 22*s, 0, Math.PI*2);
-      ctx.arc(x+24*s, y-8*s, 28*s, 0, Math.PI*2);
-      ctx.arc(x+52*s, y, 21*s, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
-
-      const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, '#9edcff');
-      g.addColorStop(.68, '#eaf8ff');
-      g.addColorStop(.681, '#d7efbe');
-      g.addColorStop(1, '#bfe39d');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, W, H);
-
-      const t = performance.now() * .00003;
-      drawCloud((W*0.15 + (t*W*16)% (W+120))%(W+120)-60, H*.18, .75);
-      drawCloud((W*0.60 + (t*W*11)% (W+160))%(W+160)-80, H*.30, .55);
-
-      ctx.fillStyle = '#94c779';
-      ctx.fillRect(0, groundY, W, H-groundY);
-      ctx.fillStyle = '#79b55e';
-      ctx.fillRect(0, groundY, W, 7);
-
-      for (const p of particles) {
-        ctx.globalAlpha = Math.max(0, p.life * 1.8);
-        ctx.fillStyle = '#87b86b';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      for (const o of obstacles) {
-        ctx.fillStyle = '#2f8a4a';
-        roundRect(o.x, o.y, o.w, o.h, 8);
-        ctx.fillStyle = '#49a964';
-        ctx.fillRect(o.x + 7, o.y + 9, 5, o.h - 16);
-      }
-
-      ctx.save();
-      ctx.translate(player.x + player.w/2, player.y + player.h/2);
-      if (!player.onGround) ctx.rotate(Math.max(-.18, Math.min(.18, player.vy / 1700)));
-      ctx.fillStyle = '#ffb703';
-      ctx.beginPath();
-      ctx.roundRect(-player.w/2, -player.h/2, player.w, player.h, 11);
-      ctx.fill();
-      ctx.fillStyle = '#17324a';
-      ctx.beginPath();
-      ctx.arc(7, -5, 3.5, 0, Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = '#fb8500';
-      ctx.beginPath();
-      ctx.moveTo(player.w/2 - 2, -1);
-      ctx.lineTo(player.w/2 + 12, 5);
-      ctx.lineTo(player.w/2 - 2, 9);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function loop(now) {
-      if (!running) {
-        draw();
-        return;
-      }
-      const dt = Math.min((now - last) / 1000, .032);
-      last = now;
-      update(dt);
-      draw();
-      if (running) requestAnimationFrame(loop);
-    }
-
-    function handleAction(e) {
-      if (e) e.preventDefault();
-      jump();
-    }
-
-    startBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      startGame();
-    });
-
-    wrap.addEventListener('pointerdown', (e) => {
-      if (e.target === startBtn) return;
-      handleAction(e);
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault();
-        if (!running && overlay.classList.contains('hidden') === false) startGame();
-        else jump();
-      }
-    });
-
-    window.addEventListener('resize', resize);
-    resize();
-    resetGame();
-    draw();
-  </script>
+<main id='wrap'>
+<canvas id='game'></canvas>
+<div id='hud'><div class='group'><div class='pill'><span class='lab'>SCORE</span><span class='val' id='score'>0</span></div><div class='pill'><span class='lab'>COINS</span><span class='val' id='coins'>0</span></div></div><div class='group'><div class='pill'><span class='lab'>BEST</span><span class='val' id='best'>0</span></div><div class='pill'><span class='lab'>LEVEL</span><span class='val' id='level'>1</span></div></div></div>
+<div id='overlay'><div id='card'><h1 id='title'>Tap Jump Desert</h1><p id='message'>砂漠を駆け抜けよう。<br>タップでジャンプ、コインを集め、障害物を避けろ！</p><button id='startBtn'>スタート</button></div></div>
+<div id='tip' class='hidden'>タップでジャンプ / コインも集めよう</div>
+</main>
+<script>
+const wrap=document.getElementById('wrap'),canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const overlay=document.getElementById('overlay'),titleEl=document.getElementById('title'),messageEl=document.getElementById('message'),startBtn=document.getElementById('startBtn');
+const scoreEl=document.getElementById('score'),coinsEl=document.getElementById('coins'),bestEl=document.getElementById('best'),levelEl=document.getElementById('level'),tipEl=document.getElementById('tip');
+let W=0,H=0,dpr=1,groundY=0,running=false,last=0,spawnTimer=0,score=0,coinCount=0,level=1,speed=320,elapsed=0,audioCtx=null;
+let best=Number(localStorage.getItem('tapJumpBest')||0),bestCoins=Number(localStorage.getItem('tapJumpBestCoins')||0);
+const defs={cactus:{w:34,h:92},rock:{w:58,h:40},bones:{w:72,h:30}},player={x:0,y:0,w:46,h:46,vy:0,gravity:2200,jumpPower:790,onGround:true,squash:0,tilt:0};
+let obstacles=[],coins=[],particles=[];
+function rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+function hit(a,b,p=0){return a.x+p<b.x+b.w-p&&a.x+a.w-p>b.x+p&&a.y+p<b.y+b.h-p&&a.y+a.h-p>b.y+p}
+function resize(){const r=wrap.getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);groundY=H*.82;player.x=Math.max(44,W*.17);if(!running)player.y=groundY-player.h}
+function hud(){scoreEl.textContent=Math.floor(score);coinsEl.textContent=coinCount;bestEl.textContent=best;levelEl.textContent=level}
+function reset(){obstacles=[];coins=[];particles=[];score=0;coinCount=0;level=1;speed=320;elapsed=0;spawnTimer=1.1;player.y=groundY-player.h;player.vy=0;player.onGround=true;player.squash=0;player.tilt=0;hud()}
+function ensureAudio(){if(!audioCtx){const C=window.AudioContext||window.webkitAudioContext;if(C)audioCtx=new C()}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume()}
+function tone(type){if(!audioCtx)return;const n=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);g.gain.setValueAtTime(.0001,n);if(type==='jump'){o.type='square';o.frequency.setValueAtTime(520,n);o.frequency.exponentialRampToValueAtTime(360,n+.12);g.gain.exponentialRampToValueAtTime(.05,n+.01);g.gain.exponentialRampToValueAtTime(.0001,n+.14);o.start(n);o.stop(n+.15)}else if(type==='coin'){o.type='triangle';o.frequency.setValueAtTime(720,n);o.frequency.exponentialRampToValueAtTime(1080,n+.1);g.gain.exponentialRampToValueAtTime(.05,n+.01);g.gain.exponentialRampToValueAtTime(.0001,n+.14);o.start(n);o.stop(n+.15)}else{o.type='sawtooth';o.frequency.setValueAtTime(220,n);o.frequency.exponentialRampToValueAtTime(90,n+.22);g.gain.exponentialRampToValueAtTime(.08,n+.01);g.gain.exponentialRampToValueAtTime(.0001,n+.24);o.start(n);o.stop(n+.25)}}
+function burst(x,y,n=10,color='#c99f60'){for(let i=0;i<n;i++)particles.push({x,y,vx:-40+Math.random()*140,vy:-20-Math.random()*110,life:.4+Math.random()*.3,size:3+Math.random()*5,color})}
+function startGame(){ensureAudio();reset();running=true;overlay.classList.add('hidden');tipEl.classList.remove('hidden');setTimeout(()=>tipEl.classList.add('hidden'),2200);last=performance.now();requestAnimationFrame(loop)}
+function jump(){if(running&&player.onGround){player.vy=-player.jumpPower;player.onGround=false;player.squash=.16;burst(player.x+12,groundY-6,8,'#d2b07a');tone('jump')}}
+function randType(){const r=Math.random();return r<.38?'cactus':r<.72?'rock':'bones'}
+function spawnObstacle(){const type=randType(),d=defs[type],o={type,x:W+30,y:groundY-d.h,w:d.w,h:d.h,counted:false};obstacles.push(o);if(Math.random()<.78){const n=Math.random()<.5?1:Math.random()<.75?2:3,baseY=o.y-44-Math.random()*36;for(let i=0;i<n;i++)coins.push({x:o.x+o.w*.5+i*28,y:baseY-Math.sin((i/Math.max(1,n-1))*Math.PI)*18,w:20,h:20,collected:false,spin:Math.random()*Math.PI*2})}}
+function gameOver(){running=false;best=Math.max(best,Math.floor(score));bestCoins=Math.max(bestCoins,coinCount);localStorage.setItem('tapJumpBest',best);localStorage.setItem('tapJumpBestCoins',bestCoins);hud();burst(player.x+player.w*.5,player.y+player.h*.5,18,'#b97a5b');tone('hit');titleEl.textContent='Game Over';messageEl.innerHTML=`スコア <strong>${Math.floor(score)}</strong> / コイン <strong>${coinCount}</strong><br>BEST COINS ${bestCoins}`;startBtn.textContent='もう一度';overlay.classList.remove('hidden');draw()}
+function update(dt){elapsed+=dt;level=1+Math.floor(score/10);speed=320+(level-1)*42+Math.min(70,elapsed*5);const g=player.vy>0?1.22:.92;player.vy+=player.gravity*g*dt;player.y+=player.vy*dt;player.tilt+=((player.vy/1200)-player.tilt)*.16;player.squash*=.84;if(player.y+player.h>=groundY){if(!player.onGround&&player.vy>120)burst(player.x+10,groundY-6,5,'#d2b07a');player.y=groundY-player.h;player.vy=0;player.onGround=true;player.squash=Math.max(player.squash,.12);player.tilt*=.6}spawnTimer-=dt;if(spawnTimer<=0){spawnObstacle();spawnTimer=Math.max(.68,1.42-Math.max(0,(level-1)*.05))+Math.random()*.54}for(const o of obstacles){o.x-=speed*dt;if(!o.counted&&o.x+o.w<player.x){o.counted=true;score++;hud()}if(hit(player,o,4)){gameOver();return}}obstacles=obstacles.filter(o=>o.x+o.w>-100);for(const c of coins){c.x-=speed*dt;c.spin+=dt*9;if(!c.collected&&hit(player,c,3)){c.collected=true;coinCount++;hud();burst(c.x+10,c.y+10,6,'#ffcf53');tone('coin')}}coins=coins.filter(c=>!c.collected&&c.x+c.w>-20);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=360*dt;p.life-=dt}particles=particles.filter(p=>p.life>0)}
+function cactus(x,y,s=1,a=1){ctx.save();ctx.globalAlpha=a;ctx.fillStyle='#507c42';rr(x,y-48*s,16*s,52*s,8*s);ctx.fill();rr(x-12*s,y-34*s,12*s,12*s,6*s);ctx.fill();rr(x-12*s,y-34*s,8*s,26*s,6*s);ctx.fill();rr(x+16*s,y-28*s,12*s,12*s,6*s);ctx.fill();rr(x+20*s,y-28*s,8*s,22*s,6*s);ctx.fill();ctx.restore()}
+function bg(){const sky=ctx.createLinearGradient(0,0,0,groundY);sky.addColorStop(0,'#7ebbe7');sky.addColorStop(.35,'#bfe0ef');sky.addColorStop(.7,'#f5d9a0');sky.addColorStop(1,'#efc980');ctx.fillStyle=sky;ctx.fillRect(0,0,W,groundY);const sx=W*.76,sy=H*.18,sr=Math.min(W,H)*.09,gl=ctx.createRadialGradient(sx,sy,sr*.2,sx,sy,sr*1.8);gl.addColorStop(0,'rgba(255,244,196,.95)');gl.addColorStop(.5,'rgba(255,224,145,.45)');gl.addColorStop(1,'rgba(255,224,145,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(sx,sy,sr*1.8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffe3a0';ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c69a63';ctx.beginPath();ctx.moveTo(0,groundY-120);ctx.quadraticCurveTo(W*.18,groundY-190,W*.37,groundY-138);ctx.quadraticCurveTo(W*.56,groundY-205,W*.78,groundY-148);ctx.quadraticCurveTo(W*.9,groundY-118,W,groundY-158);ctx.lineTo(W,groundY);ctx.lineTo(0,groundY);ctx.closePath();ctx.fill();ctx.fillStyle='#ddb16b';ctx.beginPath();ctx.moveTo(0,groundY-78);ctx.quadraticCurveTo(W*.22,groundY-120,W*.45,groundY-92);ctx.quadraticCurveTo(W*.63,groundY-64,W*.82,groundY-106);ctx.quadraticCurveTo(W*.93,groundY-124,W,groundY-114);ctx.lineTo(W,groundY+10);ctx.lineTo(0,groundY+10);ctx.closePath();ctx.fill();const sand=ctx.createLinearGradient(0,groundY-10,0,H);sand.addColorStop(0,'#e8bf78');sand.addColorStop(.5,'#d9aa61');sand.addColorStop(1,'#c99753');ctx.fillStyle=sand;ctx.fillRect(0,groundY,W,H-groundY);ctx.strokeStyle='rgba(243,214,161,.5)';ctx.lineWidth=2;for(let i=0;i<5;i++){const y=groundY+20+i*18;ctx.beginPath();ctx.moveTo(0,y);ctx.quadraticCurveTo(W*.3,y-12,W*.55,y+2);ctx.quadraticCurveTo(W*.75,y+14,W,y-3);ctx.stroke()}cactus(W*.16,groundY-8,.95,.38);cactus(W*.86,groundY-20,.7,.35)}
+function coin(c){const sx=.5+Math.abs(Math.cos(c.spin))*.5;ctx.save();ctx.translate(c.x+c.w/2,c.y+c.h/2);ctx.scale(sx,1);ctx.fillStyle='#ffd45f';ctx.beginPath();ctx.arc(0,0,c.w/2,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f2ab1f';ctx.lineWidth=3;ctx.stroke();ctx.restore()}
+function obstacle(o){if(o.type==='cactus')cactus(o.x+8,o.y+o.h,1.05,1);else if(o.type==='rock'){const g=ctx.createLinearGradient(o.x,o.y,o.x,o.y+o.h);g.addColorStop(0,'#94724e');g.addColorStop(1,'#6d5037');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(o.x+4,o.y+o.h);ctx.lineTo(o.x+10,o.y+12);ctx.lineTo(o.x+28,o.y+4);ctx.lineTo(o.x+48,o.y+10);ctx.lineTo(o.x+o.w-4,o.y+o.h);ctx.closePath();ctx.fill()}else{ctx.fillStyle='#efe3c7';rr(o.x+8,o.y+8,o.w-16,12,6);ctx.fill();rr(o.x+18,o.y+18,o.w-24,10,5);ctx.fill()}}
+function bird(){ctx.save();ctx.translate(player.x+player.w/2,player.y+player.h/2);ctx.rotate(Math.max(-.2,Math.min(.25,player.tilt)));ctx.scale(1+player.squash,1-player.squash);const g=ctx.createLinearGradient(-18,-20,18,22);g.addColorStop(0,'#ffd884');g.addColorStop(1,'#f39d2d');ctx.fillStyle=g;rr(-player.w/2,-player.h/2,player.w,player.h,12);ctx.fill();ctx.fillStyle='#2d1b0d';ctx.beginPath();ctx.arc(8,-5,3.4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f2702d';ctx.beginPath();ctx.moveTo(player.w/2-2,-2);ctx.lineTo(player.w/2+13,5);ctx.lineTo(player.w/2-2,10);ctx.closePath();ctx.fill();ctx.restore()}
+function draw(){ctx.clearRect(0,0,W,H);bg();for(const c of coins)coin(c);for(const o of obstacles)obstacle(o);bird();for(const p of particles){ctx.globalAlpha=Math.max(0,p.life*1.6);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+function loop(now){if(!running)return;const dt=Math.min((now-last)/1000,.032);last=now;update(dt);draw();if(running)requestAnimationFrame(loop)}
+function action(e){if(e)e.preventDefault();if(!running&&!overlay.classList.contains('hidden'))startGame();else jump()}
+startBtn.addEventListener('click',e=>{e.stopPropagation();startGame()});wrap.addEventListener('pointerdown',e=>{if(e.target!==startBtn)action(e)});window.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();action(e)}});window.addEventListener('resize',()=>{resize();draw()});resize();reset();draw();
+</script>
 </body>
 </html>
