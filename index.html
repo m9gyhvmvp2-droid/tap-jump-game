@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tap Jump Game</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #dff4ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    body {
+      display: grid;
+      place-items: center;
+    }
+    #gameWrap {
+      position: relative;
+      width: min(100vw, 720px);
+      height: min(100vh, 900px);
+      background: linear-gradient(#9edcff 0%, #eaf8ff 68%, #d7efbe 68%, #bfe39d 100%);
+      overflow: hidden;
+      border-radius: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.14);
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #hud {
+      position: absolute;
+      inset: 18px 18px auto 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      font-weight: 800;
+      color: #16324a;
+      text-shadow: 0 2px 0 rgba(255,255,255,.8);
+    }
+    #score { font-size: 28px; }
+    #best { font-size: 16px; opacity: .8; }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(2px);
+      text-align: center;
+      padding: 24px;
+    }
+    #card {
+      width: min(90%, 360px);
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(255,255,255,.9);
+      border-radius: 28px;
+      padding: 28px 24px;
+      box-shadow: 0 18px 50px rgba(28,69,93,.18);
+    }
+    h1 { margin: 0 0 12px; color: #16324a; font-size: 34px; }
+    p { margin: 0 0 20px; color: #46667c; line-height: 1.7; }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 24px;
+      width: 100%;
+      font-size: 18px;
+      font-weight: 800;
+      color: white;
+      background: #1677ff;
+      box-shadow: 0 8px 20px rgba(22,119,255,.25);
+    }
+    button:active { transform: scale(.98); }
+    .hidden { display: none !important; }
+    #tip {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.82);
+      color: #27465c;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      #gameWrap { width: 100vw; height: 100vh; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main id="gameWrap" aria-label="タップでジャンプして障害物を避けるゲーム">
+    <canvas id="game"></canvas>
+
+    <div id="hud">
+      <div id="score">0</div>
+      <div id="best">BEST 0</div>
+    </div>
+
+    <div id="overlay">
+      <div id="card">
+        <h1 id="title">Tap Jump</h1>
+        <p id="message">画面をタップするとジャンプ。<br>障害物を飛び越えよう！</p>
+        <button id="startBtn">スタート</button>
+      </div>
+    </div>
+
+    <div id="tip" class="hidden">画面タップでジャンプ</div>
+  </main>
+
+  <script>
+    const wrap = document.getElementById('gameWrap');
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const titleEl = document.getElementById('title');
+    const messageEl = document.getElementById('message');
+    const startBtn = document.getElementById('startBtn');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const tipEl = document.getElementById('tip');
+
+    let W = 0, H = 0, dpr = 1;
+    let groundY = 0;
+    let running = false;
+    let gameOver = false;
+    let last = 0;
+    let spawnTimer = 0;
+    let score = 0;
+    let best = Number(localStorage.getItem('tapJumpBest') || 0);
+    let speed = 330;
+
+    const player = {
+      x: 0,
+      y: 0,
+      w: 42,
+      h: 42,
+      vy: 0,
+      gravity: 1800,
+      jumpPower: 690,
+      onGround: true
+    };
+
+    let obstacles = [];
+    let particles = [];
+
+    function resize() {
+      const r = wrap.getBoundingClientRect();
+      W = r.width;
+      H = r.height;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      groundY = H * 0.78;
+      player.x = Math.max(42, W * 0.18);
+      if (!running) player.y = groundY - player.h;
+    }
+
+    function resetGame() {
+      obstacles = [];
+      particles = [];
+      score = 0;
+      speed = 330;
+      spawnTimer = 0;
+      player.y = groundY - player.h;
+      player.vy = 0;
+      player.onGround = true;
+      scoreEl.textContent = '0';
+      bestEl.textContent = `BEST ${best}`;
+      gameOver = false;
+    }
+
+    function startGame() {
+      resetGame();
+      running = true;
+      overlay.classList.add('hidden');
+      tipEl.classList.remove('hidden');
+      setTimeout(() => tipEl.classList.add('hidden'), 1800);
+      last = performance.now();
+      requestAnimationFrame(loop);
+    }
+
+    function jump() {
+      if (!running || gameOver) return;
+      if (player.onGround) {
+        player.vy = -player.jumpPower;
+        player.onGround = false;
+        for (let i = 0; i < 8; i++) {
+          particles.push({
+            x: player.x + player.w * 0.4,
+            y: groundY - 4,
+            vx: -40 - Math.random() * 110,
+            vy: -20 - Math.random() * 90,
+            life: .45 + Math.random() * .25,
+            size: 3 + Math.random() * 5
+          });
+        }
+      }
+    }
+
+    function spawnObstacle() {
+      const tall = Math.random() > .65;
+      const h = tall ? 78 : 52;
+      const w = tall ? 32 : 42;
+      obstacles.push({
+        x: W + 30,
+        y: groundY - h,
+        w,
+        h,
+        counted: false
+      });
+    }
+
+    function intersects(a, b) {
+      const pad = 5;
+      return (
+        a.x + pad < b.x + b.w - pad &&
+        a.x + a.w - pad > b.x + pad &&
+        a.y + pad < b.y + b.h - pad &&
+        a.y + a.h - pad > b.y + pad
+      );
+    }
+
+    function endGame() {
+      running = false;
+      gameOver = true;
+      best = Math.max(best, Math.floor(score));
+      localStorage.setItem('tapJumpBest', best);
+      bestEl.textContent = `BEST ${best}`;
+      titleEl.textContent = 'Game Over';
+      messageEl.innerHTML = `スコア <strong>${Math.floor(score)}</strong><br>もう一回挑戦しよう！`;
+      startBtn.textContent = 'もう一度';
+      overlay.classList.remove('hidden');
+    }
+
+    function update(dt) {
+      player.vy += player.gravity * dt;
+      player.y += player.vy * dt;
+
+      if (player.y + player.h >= groundY) {
+        player.y = groundY - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+
+      speed += dt * 7;
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        spawnObstacle();
+        spawnTimer = Math.max(.8, 1.45 - score * .012) + Math.random() * .65;
+      }
+
+      for (const o of obstacles) {
+        o.x -= speed * dt;
+        if (!o.counted && o.x + o.w < player.x) {
+          o.counted = true;
+          score += 1;
+          scoreEl.textContent = Math.floor(score);
+        }
+        if (intersects(player, o)) {
+          endGame();
+          return;
+        }
+      }
+      obstacles = obstacles.filter(o => o.x + o.w > -20);
+
+      for (const p of particles) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 420 * dt;
+        p.life -= dt;
+      }
+      particles = particles.filter(p => p.life > 0);
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r);
+      ctx.fill();
+    }
+
+    function drawCloud(x, y, s) {
+      ctx.fillStyle = 'rgba(255,255,255,.72)';
+      ctx.beginPath();
+      ctx.arc(x, y, 22*s, 0, Math.PI*2);
+      ctx.arc(x+24*s, y-8*s, 28*s, 0, Math.PI*2);
+      ctx.arc(x+52*s, y, 21*s, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#9edcff');
+      g.addColorStop(.68, '#eaf8ff');
+      g.addColorStop(.681, '#d7efbe');
+      g.addColorStop(1, '#bfe39d');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      const t = performance.now() * .00003;
+      drawCloud((W*0.15 + (t*W*16)% (W+120))%(W+120)-60, H*.18, .75);
+      drawCloud((W*0.60 + (t*W*11)% (W+160))%(W+160)-80, H*.30, .55);
+
+      ctx.fillStyle = '#94c779';
+      ctx.fillRect(0, groundY, W, H-groundY);
+      ctx.fillStyle = '#79b55e';
+      ctx.fillRect(0, groundY, W, 7);
+
+      for (const p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life * 1.8);
+        ctx.fillStyle = '#87b86b';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      for (const o of obstacles) {
+        ctx.fillStyle = '#2f8a4a';
+        roundRect(o.x, o.y, o.w, o.h, 8);
+        ctx.fillStyle = '#49a964';
+        ctx.fillRect(o.x + 7, o.y + 9, 5, o.h - 16);
+      }
+
+      ctx.save();
+      ctx.translate(player.x + player.w/2, player.y + player.h/2);
+      if (!player.onGround) ctx.rotate(Math.max(-.18, Math.min(.18, player.vy / 1700)));
+      ctx.fillStyle = '#ffb703';
+      ctx.beginPath();
+      ctx.roundRect(-player.w/2, -player.h/2, player.w, player.h, 11);
+      ctx.fill();
+      ctx.fillStyle = '#17324a';
+      ctx.beginPath();
+      ctx.arc(7, -5, 3.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#fb8500';
+      ctx.beginPath();
+      ctx.moveTo(player.w/2 - 2, -1);
+      ctx.lineTo(player.w/2 + 12, 5);
+      ctx.lineTo(player.w/2 - 2, 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function loop(now) {
+      if (!running) {
+        draw();
+        return;
+      }
+      const dt = Math.min((now - last) / 1000, .032);
+      last = now;
+      update(dt);
+      draw();
+      if (running) requestAnimationFrame(loop);
+    }
+
+    function handleAction(e) {
+      if (e) e.preventDefault();
+      jump();
+    }
+
+    startBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startGame();
+    });
+
+    wrap.addEventListener('pointerdown', (e) => {
+      if (e.target === startBtn) return;
+      handleAction(e);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        if (!running && overlay.classList.contains('hidden') === false) startGame();
+        else jump();
+      }
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    resetGame();
+    draw();
+  </script>
+</body>
+</html>
